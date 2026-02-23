@@ -64,4 +64,12 @@ jobs:
             }
 
           prompt: |
-            Review and validate this PR for the LeetGPU challenges repository. Use `run_challenge.py` to validate the challenge. Ensure all changes adhere to the guidelines in CLAUDE.md. Be constructive and specific in feedback.
+            Review this PR for the LeetGPU challenges repository.
+
+            Read CLAUDE.md first — the "Checklist" section is the source of truth for what to verify. Check every item against the changed files.
+
+            Then do a content review: is the problem clear, difficulty appropriate, test cases comprehensive, examples correct?
+
+            Finally, write a correct CUDA solution and validate with `run_challenge.py` (see CLAUDE.md "Testing with run_challenge.py"). Do NOT commit the solution file.
+
+            Be constructive and specific in feedback. Reference exact file paths and line numbers.

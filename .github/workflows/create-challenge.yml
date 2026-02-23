@@ -1,4 +1,4 @@
-name: Daily Challenge Creation
+name: Challenge Creation Cron
 
 on:
   schedule:
@@ -60,3 +60,5 @@ jobs:
             - Do NOT duplicate existing challenges.
             - Prefer medium or hard difficulty. Only create easy if the topic involves a non-trivial GPU concept (not just a map operation).
             - The challenge should require the solver to think about memory access patterns, synchronization, work distribution, or algorithm design — not just write a one-line kernel.
+
+            Before opening the PR, verify every item in the "Checklist" section of CLAUDE.md. Run `pre-commit run --all-files` to lint.

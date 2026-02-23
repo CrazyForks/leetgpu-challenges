@@ -17,7 +17,6 @@ challenges/<difficulty>/<number>_<name>/
 
 - **Naming**: `<number>_<challenge_name>` — sequential integer, lowercase with underscores
 - **Linting & contribution process**: See [CONTRIBUTING.md](CONTRIBUTING.md)
-- **Starter code generation**: `python scripts/generate_starter_code.py path/to/challenge_dir`
 
 ## Difficulty Levels
 
@@ -52,7 +51,7 @@ super().__init__(
 
 #### `reference_impl(self, ...)`
 - Same parameters as user's `solve` function
-- Must include assertions on shape, dtype (`torch.float32`), and device (`cuda`)
+- Must include assertions on shape, dtype, and device (`cuda`)
 - Use PyTorch operations (not Python loops) for performance
 
 #### `get_solve_signature(self) -> Dict[str, tuple]`
@@ -74,14 +73,14 @@ Maps parameter names to `(ctype, direction)` tuples.
 One small, human-readable test case for display. Use literal tensor values.
 
 #### `generate_functional_test(self) -> List[Dict[str, Any]]`
-12-15 test cases with this coverage:
+7-10 test cases with this coverage:
 
 | Category | Sizes | Count |
 |----------|-------|-------|
-| Edge cases | 1, 2, 3, 4 | 3-4 |
-| Power-of-2 | 16, 32, 64, 128, 256, 512, 1024 | 3-4 |
-| Non-power-of-2 | 30, 100, 255 | 3-4 |
-| Realistic | 1K-10K | 2-3 |
+| Edge cases | 1, 2, 3, 4 | 2-3 |
+| Power-of-2 | 16, 32, 64, 128, 256, 512, 1024 | 2-3 |
+| Non-power-of-2 | 30, 100, 255 | 2-3 |
+| Realistic | 1K-10K | 1-2 |
 
 Must also include: zero inputs, negative numbers, mixed values.
 
@@ -100,11 +99,14 @@ HTML fragment with four required sections:
 
 1. **Problem description** — 2-3 sentences: what the function does, data types, constraints
 2. **Implementation requirements** — Signature unchanged, no external libs, output location
-3. **Examples** — 1-3 examples in `<pre>` blocks with Input/Output
+3. **Examples** — 1-3 examples with Input/Output. The first example must match `generate_example_test()`. Format depends on data shape:
+   - 1D data (vectors, sequences): use `<pre>` blocks
+   - 2D/3D data (matrices, grids): use LaTeX `\begin{bmatrix}` inside `<p>` blocks
+   - Be consistent within a single challenge
 4. **Constraints** — Size bounds, data types, value ranges, **and performance test size**
 
 **Formatting rules:**
-- `<code>` for variables/functions, `<pre>` for examples
+- `<code>` for variables/functions; `<pre>` for 1D examples, LaTeX `\begin{bmatrix}` for matrices
 - `&le;`, `&ge;`, `&times;` for math symbols
 - **Performance test size bullet**: Must include a bullet documenting the exact parameters used in `generate_performance_test()`, formatted as:
   - `<li>Performance is measured with <code>param</code> = value</li>`
@@ -130,17 +132,30 @@ Must compile/run without errors but not solve the problem. No comments except th
 - CuTe: `challenges/easy/1_vector_add/starter/starter.cute.py`
 - Mojo: `challenges/easy/1_vector_add/starter/starter.mojo`
 
+### Parameter Description Comment
+
+Each starter file must have exactly one comment describing the parameters, placed directly before the `solve` function. Use these exact templates:
+
+| Framework | Comment template |
+|-----------|-----------------|
+| CUDA | `// <params> are device pointers` |
+| Mojo | `# <params> are device pointers` |
+| PyTorch, Triton, CuTe | `# <params> are tensors on the GPU` |
+| JAX | `# <params> are tensors on GPU` (+ `# return output tensor directly` inside body) |
+
+**Rules:**
+- Easy challenges: include the parenthetical `(i.e. pointers to memory on the GPU)` for CUDA/Mojo (matches vector_add reference)
+- Medium/Hard challenges: omit the parenthetical — just `are device pointers`
+- No other comments anywhere in the starter file
+- List only input/output tensor parameter names, not size parameters
+
 ## Creation Workflow
 
 1. Create directory: `mkdir -p challenges/<difficulty>/<number>_<name>/starter`
-2. Write `challenge.py` — inherit ChallengeBase, implement all 5 methods
+2. Write `challenge.py` — inherit ChallengeBase, implement all 6 methods
 3. Write `challenge.html` — all 4 sections
-4. Write starter code for all 6 frameworks (or use `scripts/generate_starter_code.py`)
-5. Validate:
-   ```bash
-   python -c "from challenges.<difficulty>.<number>_<name>.challenge import Challenge; c = Challenge(); print('Tests:', len(c.generate_functional_test()))"
-   ```
-6. Lint: `pre-commit run --all-files`
+4. Write starter code for all 6 frameworks
+5. Lint: `pre-commit run --all-files`
 
 ## Testing with `run_challenge.py`
 
@@ -157,10 +172,30 @@ python scripts/run_challenge.py path/to/challenge_dir --language cuda --action r
 
 ## Checklist
 
+Verify every item before submitting. This is the single source of truth — workflow prompts reference this section.
+
+### challenge.html
+- [ ] Starts with `<p>` (problem description) — never `<h1>`
+- [ ] Has `<h2>` sections for: Implementation Requirements, Example(s), Constraints (not `<h1>` or `<h3>`)
+- [ ] First example matches `generate_example_test()` values
+- [ ] Examples use `<pre>` for 1D data, LaTeX `\begin{bmatrix}` for matrices — consistent, never mixed
+- [ ] Constraints includes `Performance is measured with <code>param</code> = value` bullet matching `generate_performance_test()`
+
+### challenge.py
+- [ ] `class Challenge` inherits `ChallengeBase`
+- [ ] `__init__` calls `super().__init__()` with name, atol, rtol, num_gpus, access_tier
+- [ ] `reference_impl` has assertions on shape, dtype, and device
+- [ ] All 6 methods present: `__init__`, `reference_impl`, `get_solve_signature`, `generate_example_test`, `generate_functional_test`, `generate_performance_test`
+- [ ] `generate_functional_test` returns 7-10 cases: edge cases (1-4 elements), powers-of-2, non-powers-of-2, realistic sizes, zeros, negatives
+- [ ] `generate_performance_test` fits 5x in 16GB VRAM (Tesla T4)
+
+### Starter files
+- [ ] All 6 files present: `.cu`, `.pytorch.py`, `.triton.py`, `.jax.py`, `.cute.py`, `.mojo`
+- [ ] Exactly 1 parameter description comment per file, no other comments
+- [ ] CUDA/Mojo use "device pointers"; easy challenges include `(i.e. pointers to memory on the GPU)`, medium/hard omit it
+- [ ] Python frameworks use "tensors on the GPU"; JAX also has `# return output tensor directly`
+- [ ] Starters compile/run but do NOT produce correct output
+
+### General
 - [ ] Directory follows `<number>_<name>` convention
-- [ ] `challenge.py`: inherits ChallengeBase, has reference_impl with assertions, all test generators
-- [ ] `challenge.html`: description, requirements, examples, constraints with performance test size bullet
-- [ ] `starter/`: all 6 framework files present, compilable, non-functional
-- [ ] Functional tests: 12-15 cases covering edges, powers-of-2, non-powers, special values
-- [ ] Performance test: appropriately sized for 16GB VRAM
-- [ ] Linting passes: black, isort, flake8 (Python); clang-format (CUDA)
+- [ ] Linting passes: `pre-commit run --all-files`
